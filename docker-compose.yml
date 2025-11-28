@@ -16,6 +16,6 @@ services:
       - SPOOLMAN_URL=http://192.168.5.34
       - SLICER=orcaslicer
     volumes:
-      - spoolman2slicer:/configs
+      - ./spoolman2slicer:/configs
     #--------Use this for advanced CLI arguments (adapt as needed):------------------
     #entrypoint: [ "sh", "-c", "python3 ./spoolman2slicer.py -U -d /configs -s ${SLICER} -u ${SPOOLMAN_URL}" ]
