@@ -17,9 +17,6 @@ services:
       - SLICER=orcaslicer
     volumes:
       - spoolman2slicer:/configs
-    entrypoint: 
-      [ "sh", "-c", "umask 000 && python3 ./spoolman2slicer.py -U -d /configs -s ${SLICER} -u ${SPOOLMAN_URL}" ]
-
 volumes:
   spoolman2slicer:
     external: true
