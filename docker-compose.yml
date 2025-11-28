@@ -19,3 +19,6 @@ services:
       - spoolman2slicer:/configs
     #--------Use this for advanced CLI arguments (adapt as needed):------------------
     #entrypoint: [ "sh", "-c", "python3 ./spoolman2slicer.py -U -d /configs -s ${SLICER} -u ${SPOOLMAN_URL}" ]
+volumes:
+  spoolman2slicer:
+    external: true
