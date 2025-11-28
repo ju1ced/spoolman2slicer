@@ -459,6 +459,13 @@ def write_filament(filament):
     print(f"Writing to: {filename}")
 
     atomic_write(filename, filament_text)
+    # *** TOEGEVOEGDE CODE OM 777 PERMISSIES AF TE DWINGEN ***
+    try:
+        os.chmod(filename, 0o777)
+        _log_debug(f"Permissions for {filename} set to 777 (rwxrwxrwx).")
+    except Exception as e:
+        _log_error(f"Failed to set permissions to 777 for {filename}", str(e))
+    # *********************************************************
     filament_id_to_content[content_cache_key] = filament_text
 
     if args.verbose:
