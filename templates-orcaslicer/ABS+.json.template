@@ -8,6 +8,6 @@
     "from": "User",
     "inherits": "{{vendor.name}} {{material}} @Anycubic Kobra S1 0.4 nozzle",
     "is_custom_defined": "0",
-    "name": "{{vendor.name}} {{material}} @ {{name}}",
+    "name": "{{vendor.name}} {{material}} @ {{name}} - S{{spool.id}}",
     "version": "1.3.2511.10"
 }
