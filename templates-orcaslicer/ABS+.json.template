@@ -8,7 +8,7 @@
     "from": "User",
     "inherits": "{{vendor.name}} {{material}} @ Anycubic Kobra S1 0.4 nozzle",
     "is_custom_defined": "0",
-    "name": "{{vendor.name}} {{material}} @ {{name}}",
+    "name": "{{vendor.name}} {{material}} @ {{name}} - {{spool.id}}",
     "nozzle_temperature": [
         "{{settings_extruder_temp|int}}"
     ],
