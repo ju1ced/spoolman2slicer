@@ -11,4 +11,4 @@ ENV SLICER=orcaslicer
 RUN pip install -r requirements.txt
 RUN mkdir -p /root/.config/spoolman2slicer
 RUN cp -r ./templates-* /root/.config/spoolman2slicer/
-ENTRYPOINT [ "sh", "-c", "python3 ./spoolman2slicer.py -U -d /configs -s ${SLICER} -u ${SPOOLMAN_URL}" --create-per-spool "all" ]
+ENTRYPOINT [ "sh", "-c", "python3 ./spoolman2slicer.py -U -d /configs -s ${SLICER} -u ${SPOOLMAN_URL}" --create-per-spool {all} ]
