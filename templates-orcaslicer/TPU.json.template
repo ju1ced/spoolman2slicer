@@ -49,7 +49,7 @@
         "{{settings_extruder_temp|int + 10}}"
     ],
     "cool_plate_temp": [
-        "{{settings_bed_temp|int}}"
+        "{{settings_bed_temp|int - 20}}"
     ],
     "eng_plate_temp": [
         "{{settings_bed_temp|int}}"
@@ -61,7 +61,7 @@
         "{{settings_bed_temp|int}}"
     ],
     "cool_plate_temp_initial_layer": [
-        "{{settings_bed_temp|int + 10}}"
+        "{{settings_bed_temp|int - 15}}"
     ],
     "eng_plate_temp_initial_layer": [
         "{{settings_bed_temp|int + 10}}"
