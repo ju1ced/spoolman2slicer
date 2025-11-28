@@ -8,7 +8,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/bofh69/spoolman2slicer:latest
+    image: ghcr.io/ju1ced/spoolman2slicer:latest
     container_name: spoolman2slicer
     user: "1000:1000"
     restart: unless-stopped
