@@ -1,15 +1,14 @@
 {
     "filament_settings_id": [
-        "{{id}}"
+        "{{vendor.name}} {{material}} @ {{name}}"
     ],
     "filament_start_gcode": [
         "; filament start gcode\nM555 S={{spool.id}}"
     ],
     "from": "User",
-    "inherits": "{{material}}",
+    "inherits": "{{vendor.name}} {{material}} @ Anycubic Kobra S1 0.4 nozzle",
     "is_custom_defined": "0",
-    "name": "{{name}}{% if spool.id %} - {{spool.id}}{% endif %}",
-
+    "name": "{{vendor.name}} {{material}} @ {{name}}",
     "nozzle_temperature": [
         "{{settings_extruder_temp|int}}"
     ],
