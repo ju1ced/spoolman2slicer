@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Sebastian Andersson <sebastian@bittr.nu>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 version: '3.8'
 
 services:
@@ -8,6 +11,7 @@ services:
     image: ghcr.io/bofh69/spoolman2slicer:latest
     container_name: spoolman2slicer
     restart: unless-stopped
+    #---------Update the following depending on your needs---------
     environment:
       - SPOOLMAN_URL=http://192.168.5.34
       - SLICER=orcaslicer
