@@ -34,6 +34,19 @@ from websockets.client import connect
 
 from file_utils import atomic_write
 
+VALID_LOCATIONS = ["Kast", "ACE Pro 1", "ACE Pro 2"]
+
+def spool_sort_key(spool):
+    loc = spool.get("location", "")
+    
+    if loc == "ACE Pro 1":
+        return (0, spool.get("id", 0))
+    if loc == "ACE Pro 2":
+        return (1, spool.get("id", 0))
+    if loc == "Kast":
+        return (2, spool.get("id", 0))
+    
+    return (99, spool.get("id", 0))
 
 VERSION = "0.0.2-3-gdf67a39"
 
@@ -492,11 +505,19 @@ def process_filaments_default(spools):
 
 def process_filaments_per_spool_all(spools):
     """Process filaments in 'all' mode: one file per non-archived spool"""
-    for spool in spools:
-        # Skip archived spools
-        if spool.get("archived", False):
-            continue
-        filament = spool["filament"].copy()  # Make a copy to avoid mutation
+
+    # 🔥 filter + sort
+    filtered_spools = [
+        s for s in spools
+        if not s.get("archived", False)
+        and s.get("location") in VALID_LOCATIONS
+    ]
+
+    filtered_spools.sort(key=spool_sort_key)
+
+    for spool in filtered_spools:
+        filament = spool["filament"].copy()
+
         for suffix in get_config_suffix():
             for variant in args.variants.split(","):
                 add_sm2s_to_filament(filament, suffix, variant, spool)
@@ -604,6 +625,7 @@ def load_and_update_all_filaments(url: str):
 
     # Convert spools_cache to list for processing
     spools = list(spools_cache.values())
+    spools.sort(key=spool_sort_key)
 
     if args.create_per_spool == "all":
         process_filaments_per_spool_all(spools)
@@ -686,6 +708,7 @@ def handle_filament_update_msg(msg):
 
 def handle_spool_update(spool):
     """Update files for a spool based on current mode"""
+
     if "filament" not in spool:
         filament_id = spool.get("filament_id")
         if filament_id and filament_id in filaments_cache:
@@ -696,16 +719,24 @@ def handle_spool_update(spool):
         return
 
     if args.create_per_spool == "all":
-        # One file per spool
-        if not spool.get("archived", False):
-            filament_copy = filament.copy()
-            for suffix in get_config_suffix():
-                for variant in args.variants.split(","):
-                    add_sm2s_to_filament(filament_copy, suffix, variant, spool)
-                    delete_filament(filament_copy, is_update=True)
+        filament_copy = filament.copy()
+
+        for suffix in get_config_suffix():
+            for variant in args.variants.split(","):
+                add_sm2s_to_filament(filament_copy, suffix, variant, spool)
+
+                # 🔥 altijd oude file cleanup doen
+                delete_filament(filament_copy, is_update=True)
+
+                # 🔥 alleen schrijven als geldig
+                if (
+                    not spool.get("archived", False)
+                    and spool.get("location") in VALID_LOCATIONS
+                ):
                     write_filament(filament_copy)
+
     elif args.create_per_spool in ["least-left", "most-recent"]:
-        # Find all spools for this filament and reprocess
+        # originele code laten staan (ongewijzigd)
         filament_id = filament["id"]
         filament_spools = [
             s
@@ -717,7 +748,7 @@ def handle_spool_update(spool):
         if filament_spools:
             if args.create_per_spool == "least-left":
                 selected_spool = select_spool_by_least_left(filament_spools)
-            else:  # most-recent
+            else:
                 selected_spool = select_spool_by_most_recent(filament_spools)
 
             filament_copy = selected_spool["filament"].copy()
@@ -727,20 +758,16 @@ def handle_spool_update(spool):
                     delete_filament(filament_copy, is_update=True)
                     write_filament(filament_copy)
         else:
-            # No active spools left, delete the file
             filament_copy = filament.copy()
             for suffix in get_config_suffix():
                 for variant in args.variants.split(","):
                     add_sm2s_to_filament(filament_copy, suffix, variant)
                     delete_filament(filament_copy)
+
     else:
-        # Default mode: one file per filament
-        # Check if filament has any active spools
-        # (or if cache is empty, assume this is the active spool)
+        # default mode (ongewijzigd)
         filament_id = filament["id"]
-        has_active_spools = len(
-            spools_cache
-        ) == 0 or any(  # Cache not populated (e.g., in tests or initial load)
+        has_active_spools = len(spools_cache) == 0 or any(
             s.get("filament", {}).get("id") == filament_id
             and not s.get("archived", False)
             for s in spools_cache.values()
@@ -754,7 +781,6 @@ def handle_spool_update(spool):
                     delete_filament(filament_copy, is_update=True)
                     write_filament(filament_copy)
         else:
-            # No active spools, delete the file
             filament_copy = filament.copy()
             for suffix in get_config_suffix():
                 for variant in args.variants.split(","):
