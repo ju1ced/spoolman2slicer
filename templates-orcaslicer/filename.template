@@ -1,5 +1,17 @@
-{% if sm2s.variant != "" %}
-{{sm2s.variant}} - {{vendor.name}} - {{material}} - {{name}}.{{sm2s.slicer_suffix}}
+{% set loc = (spool.location | default("")) %}
+
+{% if "ACE Pro 1" in loc %}
+{% set prefix = "1_🖨️ " %}
+{% elif "ACE Pro 2" in loc %}
+{% set prefix = "2_🖨️ " %}
+{% elif "Kast" in loc %}
+{% set prefix = "3_📦 " %}
 {% else %}
-{{vendor.name}} - {{material}} -{{name}}.{{sm2s.slicer_suffix}}
+{% set prefix = "9_❓ " %}
+{% endif %}
+
+{% if sm2s.variant != "" %}
+{{prefix}}{{material}} {{name}} - {{spool.id}}.{{sm2s.slicer_suffix}}
+{% else %}
+{{prefix}}{{material}} {{name}} - {{spool.id}}.{{sm2s.slicer_suffix}}
 {% endif %}
