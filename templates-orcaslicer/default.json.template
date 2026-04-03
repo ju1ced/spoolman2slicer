@@ -24,7 +24,9 @@
     "filament_settings_id": [
         "{{vendor.name}} {{material}} @ {{name}}"
     ],
-    "filament_start_gcode": [],
+    "filament_start_gcode": [
+        "; filament start gcode\nM555 S={{spool.id}}"
+    ],
 {% if extra.pressure_advance %}
     "enable_pressure_advance": [
 	"1"
