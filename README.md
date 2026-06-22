@@ -109,6 +109,15 @@ The default template files also use `- {{spool.id}}` at
 the end of the "name" field in the templates that use a name.
 If you update the filename template, update the name field too.
 
+Per-spool output can also be limited and sorted by Spoolman's spool
+`location` field. By default, per-spool output keeps the Anycubic ACE/Kast
+workflow by including `ACE Pro 1`, `ACE Pro 2`, and `Kast`, sorted in that
+order. Spools with an empty or missing location are still included for
+backwards compatibility. Use `--locations ""` to include every location, or
+pass a comma separated list such as `--locations "ACE Pro 1,Kast"`. Use
+`--location-order` when the generated filenames should be sorted differently
+from the filter list.
+
 
 ## Usage
 
@@ -117,6 +126,8 @@ usage: spoolman2slicer.py [-h] [--version] -d DIR
                           [-s {orcaslicer,prusaslicer,slic3r,superslicer}]
                           [-u URL] [-U] [-v] [-V VALUE1,VALUE2..] [-D]
                           [--create-per-spool {all,least-left,most-recent}]
+                          [--locations VALUE1,VALUE2..]
+                          [--location-order VALUE1,VALUE2..]
 
 Fetches data from Spoolman and creates slicer filament config files.
 
@@ -135,10 +146,18 @@ options:
   -D, --delete-all      delete all filament configs before adding existing
                         ones
   --create-per-spool {all,least-left,most-recent}
-                        create one output file per spool instead of per filament.
-                        'all': one file per spool.
-                        'least-left': one file per filament for the spool having the least filament left.
-                        'most-recent': one file per filament for the spool being most recently used.
+                        create one output file per spool instead of per
+                        filament. 'all': one file per spool. 'least-left': one
+                        file per filament for the spool having the least
+                        filament left. 'most-recent': one file per filament
+                        for the spool being most recently used.
+  --locations VALUE1,VALUE2..
+                        only include spools from these locations when creating
+                        per-spool configs, separated by comma. Use an empty
+                        value to include all locations
+  --location-order VALUE1,VALUE2..
+                        sort generated per-spool configs by these locations,
+                        separated by comma
 ```
 
 ## Installation

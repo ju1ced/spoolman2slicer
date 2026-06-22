@@ -449,3 +449,89 @@ class TestCachingForSpoolAll:
             # Check that two files were created (one per variant)
             files = os.listdir(temp_output_dir)
             assert len(files) == 2
+
+
+class TestLocationFiltering:
+    """Test configurable spool location filtering and sorting."""
+
+    def test_per_spool_all_filters_and_sorts_configured_locations(self):
+        """Only configured locations are emitted, in configured location order."""
+        spools = [
+            {
+                "id": 3,
+                "archived": False,
+                "location": "Kast",
+                "filament": {"id": 30, "name": "PLA C", "material": "PLA"},
+            },
+            {
+                "id": 1,
+                "archived": False,
+                "location": "Other Shelf",
+                "filament": {"id": 10, "name": "PLA A", "material": "PLA"},
+            },
+            {
+                "id": 2,
+                "archived": False,
+                "location": "ACE Pro 1",
+                "filament": {"id": 20, "name": "PLA B", "material": "PLA"},
+            },
+        ]
+        written_spool_ids = []
+
+        def fake_write_filament(filament):
+            written_spool_ids.append(filament["spool"]["id"])
+
+        with (
+            patch.object(spoolman2slicer.args, "create_per_spool", "all"),
+            patch.object(spoolman2slicer.args, "locations", "Kast,ACE Pro 1"),
+            patch.object(spoolman2slicer.args, "location_order", "ACE Pro 1,Kast"),
+            patch.object(spoolman2slicer.args, "variants", ""),
+            patch("spoolman2slicer.get_config_suffix", return_value=["ini"]),
+            patch("spoolman2slicer.write_filament", side_effect=fake_write_filament),
+        ):
+            spoolman2slicer.process_filaments_per_spool_all(spools)
+
+        assert written_spool_ids == [2, 3]
+
+    def test_empty_locations_includes_all_locations(self):
+        """An empty --locations value disables location filtering."""
+        spool = {"id": 1, "location": "Other Shelf"}
+
+        with patch.object(spoolman2slicer.args, "locations", ""):
+            assert spoolman2slicer.spool_location_allowed(spool)
+
+    def test_selected_spool_modes_apply_location_filter(self):
+        """least-left/most-recent modes choose only from configured locations."""
+        spoolman2slicer.spools_cache.clear()
+        spools = [
+            {
+                "id": 1,
+                "archived": False,
+                "location": "Other Shelf",
+                "spool_weight": 10,
+                "filament": {"id": 10, "name": "PLA A", "material": "PLA"},
+            },
+            {
+                "id": 2,
+                "archived": False,
+                "location": "ACE Pro 1",
+                "spool_weight": 50,
+                "filament": {"id": 10, "name": "PLA A", "material": "PLA"},
+            },
+        ]
+        written_spool_ids = []
+
+        def fake_write_filament(filament):
+            written_spool_ids.append(filament["spool"]["id"])
+
+        with (
+            patch.object(spoolman2slicer.args, "locations", "ACE Pro 1"),
+            patch.object(spoolman2slicer.args, "variants", ""),
+            patch("spoolman2slicer.get_config_suffix", return_value=["ini"]),
+            patch("spoolman2slicer.write_filament", side_effect=fake_write_filament),
+        ):
+            spoolman2slicer.process_filaments_per_spool_selected(
+                spools, spoolman2slicer.select_spool_by_least_left
+            )
+
+        assert written_spool_ids == [2]
