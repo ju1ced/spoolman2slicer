@@ -34,19 +34,38 @@ from websockets.client import connect
 
 from file_utils import atomic_write
 
-VALID_LOCATIONS = ["Kast", "ACE Pro 1", "ACE Pro 2"]
+DEFAULT_LOCATION_ORDER = ["ACE Pro 1", "ACE Pro 2", "Kast"]
+DEFAULT_LOCATIONS = ",".join(DEFAULT_LOCATION_ORDER)
+
+
+def split_csv(value):
+    """Return trimmed, non-empty values from a comma separated CLI option."""
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def get_enabled_locations():
+    """Return locations that are allowed for per-spool output, or None for all."""
+    locations = split_csv(args.locations)
+    return set(locations) if locations else None
+
+
+def spool_location_allowed(spool):
+    """Return whether a spool location should be included in generated output."""
+    enabled_locations = get_enabled_locations()
+    if enabled_locations is None:
+        return True
+    location = spool.get("location")
+    if not location:
+        return True
+    return location in enabled_locations
+
 
 def spool_sort_key(spool):
-    loc = spool.get("location", "")
-    
-    if loc == "ACE Pro 1":
-        return (0, spool.get("id", 0))
-    if loc == "ACE Pro 2":
-        return (1, spool.get("id", 0))
-    if loc == "Kast":
-        return (2, spool.get("id", 0))
-    
-    return (99, spool.get("id", 0))
+    """Sort spools by configured location order, then by spool id."""
+    location_order = {
+        location: index for index, location in enumerate(split_csv(args.location_order))
+    }
+    return (location_order.get(spool.get("location", ""), 99), spool.get("id", 0))
 
 VERSION = "0.0.2-3-gdf67a39"
 
@@ -127,6 +146,23 @@ parser.add_argument(
     "'all': one file per spool. "
     "'least-left': one file per filament for the spool having the least filament left. "
     "'most-recent': one file per filament for the spool being most recently used.",
+)
+
+parser.add_argument(
+    "--locations",
+    metavar="VALUE1,VALUE2..",
+    default=DEFAULT_LOCATIONS,
+    help=(
+        "only include spools from these locations when creating per-spool "
+        "configs, separated by comma. Use an empty value to include all locations"
+    ),
+)
+
+parser.add_argument(
+    "--location-order",
+    metavar="VALUE1,VALUE2..",
+    default=DEFAULT_LOCATIONS,
+    help="sort generated per-spool configs by these locations, separated by comma",
 )
 
 args = parser.parse_args()
@@ -508,9 +544,9 @@ def process_filaments_per_spool_all(spools):
 
     # 🔥 filter + sort
     filtered_spools = [
-        s for s in spools
-        if not s.get("archived", False)
-        and s.get("location") in VALID_LOCATIONS
+        s
+        for s in spools
+        if not s.get("archived", False) and spool_location_allowed(s)
     ]
 
     filtered_spools.sort(key=spool_sort_key)
@@ -556,8 +592,8 @@ def process_filaments_per_spool_selected(spools, selector_func):
     # Group spools by filament ID
     filament_to_spools = {}
     for spool in spools:
-        # Skip archived spools
-        if spool.get("archived", False):
+        # Skip archived spools and filtered locations
+        if spool.get("archived", False) or not spool_location_allowed(spool):
             continue
         filament_id = spool["filament"]["id"]
         if filament_id not in filament_to_spools:
@@ -729,10 +765,7 @@ def handle_spool_update(spool):
                 delete_filament(filament_copy, is_update=True)
 
                 # 🔥 alleen schrijven als geldig
-                if (
-                    not spool.get("archived", False)
-                    and spool.get("location") in VALID_LOCATIONS
-                ):
+                if not spool.get("archived", False) and spool_location_allowed(spool):
                     write_filament(filament_copy)
 
     elif args.create_per_spool in ["least-left", "most-recent"]:
@@ -743,6 +776,7 @@ def handle_spool_update(spool):
             for s in spools_cache.values()
             if s.get("filament", {}).get("id") == filament_id
             and not s.get("archived", False)
+            and spool_location_allowed(s)
         ]
 
         if filament_spools:
